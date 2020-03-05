@@ -1,0 +1,50 @@
+Define f as a square of variable x:
+	
+	tf.reset_default_graph()
+	x = tf.get_variable("x", shape=(), dtype=tf.float32)
+	f = x**2
+
+Let's say we want to minimize the value of f wrt x:
+	optimizer = tf.train.GradientDescentOptimizer(0.1)
+	step = optimizer.minimize(f, var_list=[x]) # here step returns an operation we can reuse
+
+Note: don't have to specify all optimized variables: 
+tf knows which variables needed to compute f
+=> step = optimizer.minimize(f)
+
+- All variables are trainable by default:
+x = tf.get_variable("x", shape=(), dtype=tf.float32, trainable=True)
+- Get all of them:
+tf.trainable_variables()
+
+Making GD steps
+Create a session and initialize variables:
+	s = tf.InteractiveSession()
+	s.run(tf.global_variables_initializer())
+We are ready to make 10 gradient descent steps using forloop
+
+	for i in range(10):
+		_, curr_x, curr_f = s.run([step,x,f])
+		print(curr_x, curr_f)
+
+To get synchronized output, we can also pass our tensor of interest through tf.Print:
+	...
+	f = x**2
+	f = tf.Print(f, [x,f], "x,f:")
+	...
+	for i in range(10):
+		s.run([step, f])
+
+Logging with TensorBoard
+	tf.summary.scalar('curr_x', x)
+	tf.summary.scalar('curr_f', f)
+	summaries = tf.summary.merge_all()
+
+This is how we log:
+	s = tf.InteractiveSession()
+	summary_writer = tf.summary.FileWriter("logs/1", s.graph) # 1 is the run number
+	s.run(tf.global_variables_initializer())
+	for i in range(10):
+		_, curr_summaries = s.run([step,summaries])
+		summary_writer.add_summary(curr_summaries, i)
+		summary_writer.flush()
